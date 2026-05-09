@@ -1,0 +1,346 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #000;
+    overflow: hidden;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #fff;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+#gameContainer {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+}
+
+#gameCanvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* Перекрестие */
+#crosshair {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 32px;
+    color: rgba(255, 255, 255, 0.6);
+    pointer-events: none;
+    text-shadow: 0 0 5px #000;
+    z-index: 10;
+}
+
+/* Мини-карта */
+#minimap {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    width: 150px;
+    height: 150px;
+    border: 2px solid rgba(255, 215, 0, 0.6);
+    border-radius: 8px;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 10;
+}
+
+#minimapCanvas {
+    width: 100%;
+    height: 100%;
+}
+
+/* HUD игрока */
+#playerHUD {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background: rgba(0, 0, 0, 0.75);
+    border: 1px solid rgba(255, 215, 0, 0.4);
+    border-radius: 10px;
+    padding: 12px 16px;
+    z-index: 10;
+    min-width: 220px;
+}
+
+.hud-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    font-size: 13px;
+}
+
+.hud-label {
+    width: 20px;
+    text-align: center;
+}
+
+.hud-bar-outer {
+    flex: 1;
+    height: 14px;
+    background: #1a1a1a;
+    border-radius: 7px;
+    overflow: hidden;
+    border: 1px solid #333;
+}
+
+.hud-bar-inner {
+    height: 100%;
+    border-radius: 7px;
+    transition: width 0.3s ease;
+}
+
+.hp-bar {
+    background: linear-gradient(90deg, #cc0000, #ff4444);
+}
+
+.xp-bar {
+    background: linear-gradient(90deg, #006600, #44ff44);
+}
+
+#coinsDisplay {
+    font-size: 16px;
+    color: #ffd700;
+    font-weight: bold;
+    margin-top: 4px;
+}
+
+#levelDisplay {
+    font-size: 14px;
+    color: #44ff44;
+    font-weight: bold;
+}
+
+/* Кнопки */
+#shopButton, #inventoryButton {
+    position: absolute;
+    top: 15px;
+    z-index: 11;
+    background: rgba(0, 0, 0, 0.75);
+    border: 1px solid rgba(255, 215, 0, 0.4);
+    color: #ffd700;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    transition: all 0.2s;
+}
+
+#shopButton {
+    right: 200px;
+}
+
+#inventoryButton {
+    right: 80px;
+}
+
+#shopButton:hover, #inventoryButton:hover {
+    background: rgba(40, 30, 0, 0.9);
+    border-color: #ffd700;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+}
+
+/* Панели (магазин, инвентарь) */
+.panel {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(10, 10, 20, 0.95);
+    border: 2px solid rgba(255, 215, 0, 0.5);
+    border-radius: 12px;
+    padding: 20px;
+    z-index: 100;
+    min-width: 380px;
+    max-width: 500px;
+    max-height: 70vh;
+    overflow-y: auto;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+}
+
+.panel.hidden {
+    display: none;
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #333;
+    padding-bottom: 10px;
+}
+
+.panel-header h2 {
+    color: #ffd700;
+    font-size: 1.3em;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: #ff4444;
+    font-size: 1.5em;
+    cursor: pointer;
+    padding: 0 8px;
+}
+
+.close-btn:hover {
+    color: #ff6666;
+}
+
+.panel-footer {
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid #333;
+    color: #aaa;
+    font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+}
+
+/* Слоты магазина и инвентаря */
+.shop-item, .inv-slot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 8px;
+    transition: all 0.2s;
+}
+
+.shop-item:hover {
+    background: rgba(255, 215, 0, 0.1);
+    border-color: #ffd700;
+}
+
+.shop-item .item-name {
+    font-weight: bold;
+    color: #fff;
+}
+
+.shop-item .item-stat {
+    font-size: 12px;
+    color: #aaa;
+}
+
+.shop-item .item-price {
+    color: #ffd700;
+    font-weight: bold;
+}
+
+.shop-item button, .inv-slot button {
+    background: #ffd700;
+    color: #000;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+
+.shop-item button:hover, .inv-slot button:hover {
+    background: #ffed4a;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.shop-item button:disabled {
+    background: #555;
+    color: #999;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.inv-slot.equipped {
+    border-color: #44ff44;
+    background: rgba(0, 255, 0, 0.1);
+}
+
+.inv-slot .item-info {
+    flex: 1;
+}
+
+.inv-slot .item-name {
+    font-weight: bold;
+}
+
+.inv-slot .item-stat {
+    font-size: 11px;
+    color: #888;
+}
+
+.inv-slot .item-rarity-common { color: #aaa; }
+.inv-slot .item-rarity-rare { color: #4488ff; }
+.inv-slot .item-rarity-epic { color: #aa44ff; }
+.inv-slot .item-rarity-legendary { color: #ff8800; }
+
+/* Сообщения */
+#messageLog {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 15;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.message {
+    background: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    animation: fadeUp 2.5s forwards;
+    pointer-events: none;
+}
+
+.message.loot { color: #ffd700; }
+.message.damage { color: #ff6666; }
+.message.heal { color: #66ff66; }
+.message.levelup { color: #ff00ff; font-size: 18px; font-weight: bold; }
+
+@keyframes fadeUp {
+    0% { opacity: 1; transform: translateY(0); }
+    70% { opacity: 1; transform: translateY(-15px); }
+    100% { opacity: 0; transform: translateY(-30px); }
+}
+
+/* Подсказка */
+#controls {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 11px;
+    z-index: 10;
+    pointer-events: none;
+}
+
+/* Pointer lock overlay */
+#pointerLockOverlay {
+    display: none;
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 50;
+    cursor: pointer;
+      }
