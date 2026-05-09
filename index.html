@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D RPG: Мир Теней</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Игровой канвас -->
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        
+        <!-- Перекрестие -->
+        <div id="crosshair">+</div>
+        
+        <!-- Мини-карта -->
+        <div id="minimap">
+            <canvas id="minimapCanvas" width="150" height="150"></canvas>
+        </div>
+        
+        <!-- Панель игрока -->
+        <div id="playerHUD">
+            <div class="hud-bar">
+                <span class="hud-label">❤️</span>
+                <div class="hud-bar-outer"><div class="hud-bar-inner hp-bar" id="hpBar"></div></div>
+                <span id="hpText">100/100</span>
+            </div>
+            <div class="hud-bar">
+                <span class="hud-label">⭐</span>
+                <div class="hud-bar-outer"><div class="hud-bar-inner xp-bar" id="xpBar"></div></div>
+                <span id="xpText">0/100</span>
+            </div>
+            <div id="coinsDisplay">🪙 <span id="coinAmount">0</span></div>
+            <div id="levelDisplay">Ур. <span id="levelNum">1</span></div>
+        </div>
+        
+        <!-- Кнопка магазина -->
+        <button id="shopButton" onclick="toggleShop()">🏪 Магазин [B]</button>
+        
+        <!-- Кнопка инвентаря -->
+        <button id="inventoryButton" onclick="toggleInventory()">🎒 Инвентарь [I]</button>
+        
+        <!-- Магазин (скрыт по умолчанию) -->
+        <div id="shopPanel" class="panel hidden">
+            <div class="panel-header">
+                <h2>🏪 Магазин</h2>
+                <button class="close-btn" onclick="toggleShop()">✕</button>
+            </div>
+            <div id="shopItems"></div>
+            <div class="panel-footer">🪙 Ваши монеты: <span id="shopCoinDisplay">0</span></div>
+        </div>
+        
+        <!-- Инвентарь (скрыт по умолчанию) -->
+        <div id="inventoryPanel" class="panel hidden">
+            <div class="panel-header">
+                <h2>🎒 Инвентарь</h2>
+                <button class="close-btn" onclick="toggleInventory()">✕</button>
+            </div>
+            <div id="inventorySlots"></div>
+            <div class="panel-footer">
+                <span>⚔️ Атака: <span id="invAtk">10</span></span>
+                <span>🛡️ Защита: <span id="invDef">0</span></span>
+            </div>
+        </div>
+        
+        <!-- Сообщения -->
+        <div id="messageLog"></div>
+        
+        <!-- Подсказка по управлению -->
+        <div id="controls">
+            WASD — движение | Мышь — камера | Пробел — атака | E — подобрать | B — магазин | I — инвентарь
+        </div>
+    </div>
+
+    <!-- Three.js с CDN -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.157.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.157.0/examples/jsm/"
+        }
+    }
+    </script>
+    
+    <script type="module" src="js/main.js"></script>
+</body>
+  </html>
