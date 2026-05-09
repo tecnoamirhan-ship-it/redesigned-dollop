@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Подземелье Дракона: Хроники Героя</title>
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --panel: #1a1a2e;
+            --gold: #ffd700;
+            --health: #ff4444;
+            --mana: #4488ff;
+            --xp: #44ff44;
+            --text: #e0e0e0;
+            --border: #333;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Courier New', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .game-wrapper {
+            display: flex;
+            gap: 15px;
+            padding: 20px;
+            max-width: 1200px;
+            width: 100%;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        /* Основное игровое поле */
+        .game-main {
+            flex: 1;
+            min-width: 500px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .game-header {
+            background: var(--panel);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .hero-name {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: var(--gold);
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        .hero-level {
+            color: var(--xp);
+            font-weight: bold;
+        }
+
+        .bars {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 200px;
+        }
+
+        .bar-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8em;
+        }
+
+        .bar-label {
+            width: 18px;
+            font-weight: bold;
+        }
+
+        .bar-outer {
+            flex: 1;
+            height: 16px;
+            background: #111;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #333;
+        }
+
+        .bar-inner {
+            height: 100%;
+            transition: width 0.3s;
+            border-radius: 8px;
+        }
+        .bar-hp {
+            background: linear-gradient(90deg, #cc0000, #ff4444);
+        }
+        .bar-mp {
+            background: linear-gradient(90deg, #0044cc, #4488ff);
+        }
+        .bar-xp {
+            background: linear-gradient(90deg, #008800, #44ff44);
+        }
+
+        .gold-display {
+            color: var(--gold);
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        #gameCanvas {
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            background: #111;
+            cursor: crosshair;
+            image-rendering: pixelated;
+            width: 100%;
+        }
+
+        .game-log {
+            background: var(--panel);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            padding: 12px;
+            height: 120px;
+            overflow-y: auto;
+            font-size: 0.85em;
+            line-height: 1.5;
+        }
+        .log-entry {
+            margin-bottom: 3px;
+        }
+        .log-damage {
+            color: #ff6666;
+        }
+        .log-heal {
+            color: #66ff66;
+        }
+        .log-loot {
+            color: #ffd700;
+        }
+        .log-info {
+            color: #88aaff;
+        }
+        .log-level {
+            color: #ff00ff;
+            font-weight: bold;
+        }
+
+        /* Панель инвентаря */
+        .side-panel {
+            width: 280px;
+            background: var(--panel);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 700px;
+            overflow-y: auto;
+        }
+
+        .panel-section h3 {
+            color: var(--gold);
+            margin-bottom: 8px;
+            font-size: 0.95em;
+            border-bottom: 1px solid #333;
+            padding-bottom: 4px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8em;
+            padding: 3px 0;
+        }
+        .stat-val {
+            color: var(--gold);
+            font-weight: bold;
+        }
+
+        .item-slot {
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 8px;
+            margin-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .item-slot:hover {
+            border-color: var(--gold);
+            background: #1a1a00;
+        }
+        .item-slot.equipped {
+            border-color: var(--xp);
+            background: #001a00;
+        }
+        .item-rarity-common {
+            color: #aaa;
+        }
+        .item-rarity-rare {
+            color: #4488ff;
+        }
+        .item-rarity-epic {
+            color: #aa44ff;
+        }
+        .item-rarity-legendary {
+            color: #ff8800;
+        }
+
+        .btn {
+            background: #222;
+            color: var(--text);
+            border: 1px solid #444;
+            padding: 8px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.8em;
+            transition: all 0.2s;
+            width: 100%;
+            text-align: center;
+        }
+        .btn:hover {
+            background: #333;
+            border-color: var(--gold);
+        }
+        .btn.primary {
+            background: #332200;
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+        .btn.danger {
+            background: #330000;
+            border-color: #ff4444;
+            color: #ff4444;
+        }
+
+        .floor-indicator {
+            text-align: center;
+            font-size: 1.2em;
+            color: #ff8800;
+            text-shadow: 0 0 15px rgba(255, 136, 0, 0.6);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%,
+            100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        .enemy-info {
+            background: #1a0000;
+            border: 1px solid #440000;
+            border-radius: 6px;
+            padding: 8px;
+            font-size: 0.8em;
+            min-height: 50px;
+        }
+
+        @media (max-width: 900px) {
+            .game-wrapper {
+                flex-direction: column;
+                align-items: center;
+            }
+            .game-main {
+                min-width: 90vw;
+            }
+            .side-panel {
+                width: 90vw;
+                max-height: none;
+            }
+            #gameCanvas {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-wrapper">
+        <!-- Основная панель -->
+        <div class="game-main">
+            <div class="game-header">
+                <div>
+                    <span class="hero-name" id="heroName">⚔️ Артур</span>
+                    <span class="hero-level" id="heroLevel">Ур. 1</span>
+                </div>
+                <div class="bars">
+                    <div class="bar-row"><span class="bar-label">❤️</span><div class="bar-outer"><div class="bar-inner bar-hp" id="hpBar" style="width:100%"></div></div><span id="hpText">100/100</span></div>
+                    <div class="bar-row"><span class="bar-label">💎</span><div class="bar-outer"><div class="bar-inner bar-mp" id="mpBar" style="width:100%"></div></div><span id="mpText">50/50</span></div>
+                    <div class="bar-row"><span class="bar-label">⭐</span><div class="bar-outer"><div class="bar-inner bar-xp" id="xpBar2" style="width:0%"></div></div><span id="xpText">0/100</span></div>
+                </div>
+                <span class="gold-display">💰 <span id="goldDisplay">0</span></span>
+            </div>
+            <canvas id="gameCanvas" width="600" height="400"></canvas>
+            <div class="floor-indicator" id="floorDisplay">🏔️ Этаж 1 — Подземелье Теней</div>
+            <div class="game-log" id="gameLog">
+                <div class="log-entry log-info">🕯️ Ты спускаешься в подземелье... Тьма сгущается.</div>
+                <div class="log-entry">Нажми <b>WASD/Стрелки</b> для движения, <b>Пробел</b> для атаки, <b>E</b> — подобрать, <b>Q</b> — зелье.</div>
+            </div>
+        </div>
+
+        <!-- Боковая панель -->
+        <div class="side-panel">
+            <div class="panel-section">
+                <h3>📊 Характеристики</h3>
+                <div class="stat-row"><span>⚔️ Атака</span><span class="stat-val" id="statAtk">15</span></div>
+                <div class="stat-row"><span>🛡️ Защита</span><span class="stat-val" id="statDef">5</span></div>
+                <div class="stat-row"><span>💨 Скорость</span><span class="stat-val" id="statSpd">3</span></div>
+                <div class="stat-row"><span>🎯 Крит.шанс</span><span class="stat-val" id="statCrit">5%</span></div>
+                <div class="stat-row"><span>💀 Убито врагов</span><span class="stat-val" id="statKills">0</span></div>
+                <div class="stat-row"><span>🏆 Всего XP</span><span class="stat-val" id="statTotalXP">0</span></div>
+            </div>
+
+            <div class="panel-section">
+                <h3>🎒 Инвентарь</h3>
+                <div id="inventoryList">
+                    <div class="item-slot" style="color:#555;">Пусто</div>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h3>⚡ Экипировка</h3>
+                <div id="equipmentList">
+                    <div class="item-slot"><span>🗡️ Оружие</span><span style="color:#aaa;">Ржавый меч</span></div>
+                    <div class="item-slot"><span>🛡️ Броня</span><span style="color:#aaa;">Кожаный доспех</span></div>
+                    <div class="item-slot"><span>💍 Аксессуар</span><span style="color:#555;">Нет</span></div>
+                </div>
+            </div>
+
+            <div class="enemy-info" id="enemyInfo">
+                <b>🎯 Цель:</b> <span id="targetName">Нет</span><br>
+                <span id="targetHP"></span>
+            </div>
+
+            <button class="btn danger" onclick="restartGame()">💀 Начать заново</button>
+            <button class="btn" onclick="saveGameManual()">💾 Сохранить</button>
+            <p style="font-size:0.7em;color:#555;text-align:center;">Автосохранение каждые 60 сек.</p>
+        </div>
+    </div>
+
+    <script>
+        // ==================== ИГРОВОЙ ДВИЖОК ====================
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const TILE_SIZE = 32;
+        const MAP_COLS = Math.floor(canvas.width / TILE_SIZE); // 18
+        const MAP_ROWS = Math.floor(canvas.height / TILE_SIZE); // 12
+
+        // Типы тайлов
+        const TILE = { FLOOR: 0, WALL: 1, DOOR: 2, STAIRS_DOWN: 3, CHEST: 4, TRAP: 5 };
+
+        // Состояние игры
+        let gameState = {
+            hero: {
+                name: 'Артур',
+                x: 5,
+                y: 5,
+                hp: 100,
+                maxHp: 100,
+                mp: 50,
+                maxMp: 50,
+                xp: 0,
+                level: 1,
+                baseAtk: 15,
+                baseDef: 5,
+                speed: 3,
+                critChance: 5,
+                gold: 0,
+                kills: 0,
+                totalXP: 0,
+                equipment: {
+                    weapon: { name: 'Ржавый меч', atk: 8, rarity: 'common' },
+                    armor: { name: 'Кожаный доспех', def: 4, rarity: 'common' },
+                    accessory: null
+                },
+                inventory: [
+                    { name: 'Зелье здоровья', type: 'potion', heal: 40, qty: 3, rarity: 'common' },
+                    { name: 'Зелье маны', type: 'potion', mana: 30, qty: 2, rarity: 'common' }
+                ]
+            },
+            map: [],
+            enemies: [],
+            items: [],
+            floor: 1,
+            dungeonName: 'Подземелье Теней',
+            log: [],
+            gameOver: false,
+            lastAttackTime: 0,
+            attackCooldown: 400
+        };
+
+        // Генерация карты
+        function generateMap() {
+            const map = [];
+            for (let y = 0; y < MAP_ROWS; y++) {
+                map[y] = [];
+                for (let x = 0; x < MAP_COLS; x++) {
+                    // Стены по краям
+                    if (x === 0 || y === 0 || x === MAP_COLS - 1 || y === MAP_ROWS - 1) {
+                        map[y][x] = TILE.WALL;
+                    }
+                    // Случайные стены (чем выше этаж, тем больше стен)
+                    else if (Math.random() < 0.1 + gameState.floor * 0.03) {
+                        map[y][x] = TILE.WALL;
+                    } else {
+                        map[y][x] = TILE.FLOOR;
+                    }
+                }
+            }
+            // Гарантируем проход вокруг стартовой позиции
+            for (let dy = -1; dy <= 1; dy++) {
+                for (let dx = -1; dx <= 1; dx++) {
+                    const ny = gameState.hero.y + dy;
+                    const nx = gameState.hero.x + dx;
+                    if (ny > 0 && ny < MAP_ROWS - 1 && nx > 0 && nx < MAP_COLS - 1) {
+                        map[ny][nx] = TILE.FLOOR;
+                    }
+                }
+            }
+            // Ставим лестницу вниз в дальнем углу
+            const stairsX = MAP_COLS - 3 + Math.floor(Math.random() * 2);
+            const stairsY = MAP_ROWS - 3 + Math.floor(Math.random() * 2);
+            map[stairsY][stairsX] = TILE.STAIRS_DOWN;
+            // Пару сундуков
+            for (let i = 0; i < 2 + Math.floor(gameState.floor / 2); i++) {
+                let cx, cy;
+                do {
+                    cx = 2 + Math.floor(Math.random() * (MAP_COLS - 4));
+                    cy = 2 + Math.floor(Math.random() * (MAP_ROWS - 4));
+                } while (map[cy][cx] !== TILE.FLOOR);
+                map[cy][cx] = TILE.CHEST;
+            }
+            // Ловушки
+            for (let i = 0; i < gameState.floor; i++) {
+                let tx, ty;
+                do {
+                    tx = 2 + Math.floor(Math.random() * (MAP_COLS - 4));
+                    ty = 2 + Math.floor(Math.random() * (MAP_ROWS - 4));
+                } while (map[ty][tx] !== TILE.FLOOR);
+                map[ty][tx] = TILE.TRAP;
+            }
+            return map;
+        }
+
+        // Генерация врагов
+        function generateEnemies() {
+            const enemies = [];
+            const count = 4 + gameState.floor * 2;
+            const names = ['Крыса-мутант', 'Скелет', 'Слизень', 'Гоблин', 'Теневой волк', 'Каменный голем',
+                'Дух тьмы', 'Паук-плевальщик', 'Бешеный гриб', 'Мертвый рыцарь'
+            ];
+            const prefix = gameState.floor >= 5 ? 'Элитный ' : gameState.floor >= 8 ? 'Древний ' : '';
+            for (let i = 0; i < count; i++) {
+                let ex, ey;
+                do {
+                    ex = 1 + Math.floor(Math.random() * (MAP_COLS - 2));
+                    ey = 1 + Math.floor(Math.random() * (MAP_ROWS - 2));
+                } while (gameState.map[ey][ex] !== TILE.FLOOR || (Math.abs(ex - gameState.hero.x) < 3 && Math.abs(ey -
+                        gameState.hero.y) < 3));
+                const baseHp = 30 + gameState.floor * 20 + Math.floor(Math.random() * 20);
+                const baseAtk = 5 + gameState.floor * 4 + Math.floor(Math.random() * 6);
+                const baseDef = 1 + gameState.floor * 2;
+                const xpReward = 15 + gameState.floor * 10 + Math.floor(Math.random() * 20);
+                const goldReward = 5 + gameState.floor * 3 + Math.floor(Math.random() * 10);
+                enemies.push({
+                    name: prefix + names[Math.floor(Math.random() * names.length)],
+                    x: ex,
+                    y: ey,
+                    hp: baseHp,
+                    maxHp: baseHp,
+                    atk: baseAtk,
+                    def: baseDef,
+                    xpReward,
+                    goldReward,
+                    alive: true,
+                    aiTimer: Math.floor(Math.random() * 3)
+                });
+            }
+            return enemies;
+        }
+
+        // Генерация предметов на полу
+        function generateFloorItems() {
+            const items = [];
+            const possibleItems = [
+                { name: 'Зелье здоровья', type: 'potion', heal: 30 + gameState.floor * 10, rarity: 'common' },
+                { name: 'Зелье маны', type: 'potion', mana: 20 + gameState.floor * 5, rarity: 'common' },
+                { name: 'Большое зелье здоровья', type: 'potion', heal: 60 + gameState.floor * 15, rarity: 'rare' },
+                { name: 'Кинжал', type: 'weapon', atk: 10 + gameState.floor * 3, rarity: 'common' },
+                { name: 'Длинный меч', type: 'weapon', atk: 18 + gameState.floor * 4, rarity: 'rare' },
+                { name: 'Мифриловый клинок', type: 'weapon', atk: 25 + gameState.floor * 5, rarity: 'epic' },
+                { name: 'Кольчуга', type: 'armor', def: 8 + gameState.floor * 3, rarity: 'rare' },
+                { name: 'Стальной нагрудник', type: 'armor', def: 14 + gameState.floor * 4, rarity: 'epic' },
+                { name: 'Амулет удачи', type: 'accessory', critBonus: 5 + gameState.floor * 2, rarity: 'epic' },
+                { name: 'Кольцо силы', type: 'accessory', atkBonus: 5 + gameState.floor * 2, rarity: 'rare' },
+            ];
+            for (let i = 0; i < 2 + Math.floor(Math.random() * 3); i++) {
+                const item = possibleItems[Math.floor(Math.random() * possibleItems.length)];
+                let ix, iy;
+                do {
+                    ix = 1 + Math.floor(Math.random() * (MAP_COLS - 2));
+                    iy = 1 + Math.floor(Math.random() * (MAP_ROWS - 2));
+                } while (gameState.map[iy][ix] !== TILE.FLOOR || (ix === gameState.hero.x && iy === gameState.hero.y));
+                items.push({ ...item, x: ix, y: iy, qty: item.type === 'potion' ? 1 + Math.floor(Math.random() * 3) :
+                        1 });
+            }
+            return items;
+        }
+
+        // Инициализация этажа
+        function initFloor() {
+            gameState.map = generateMap();
+            gameState.enemies = generateEnemies();
+            gameState.items = generateFloorItems();
+            // Ставим героя
+            gameState.hero.x = Math.floor(MAP_COLS / 2);
+            gameState.hero.y = Math.floor(MAP_ROWS / 2);
+            gameState.map[gameState.hero.y][gameState.hero.x] = TILE.FLOOR;
+            updateAllUI();
+            addLog('🏔️ Вы вошли на этаж ' + gameState.floor + ' — ' + gameState.dungeonName, 'info');
+        }
+
+        // Спуск на следующий этаж
+        function descendFloor() {
+            gameState.floor++;
+            const dungeonNames = [
+                'Подземелье Теней', 'Катакомбы Страха', 'Зал Мучений', 'Пещеры Отчаяния',
+                'Логово Дракона', 'Бездна Боли', 'Храм Проклятых', 'Гробница Королей',
+                'Чертоги Безумия', 'Сердце Тьмы'
+            ];
+            gameState.dungeonName = dungeonNames[Math.min(gameState.floor - 1, dungeonNames.length - 1)];
+            gameState.hero.hp = Math.min(gameState.hero.hp + 30, gameState.hero.maxHp);
+            gameState.hero.mp = Math.min(gameState.hero.mp + 15, gameState.hero.maxMp);
+            initFloor();
+            addLog('⬇️ Спуск на этаж ' + gameState.floor + '! HP и MP частично восстановлены.', 'heal');
+        }
+
+        // ==================== БОЕВАЯ СИСТЕМА ====================
+        function getHeroAtk() {
+            let atk = gameState.hero.baseAtk + gameState.hero.level * 3;
+            if (gameState.hero.equipment.weapon) atk += gameState.hero.equipment.weapon.atk;
+            if (gameState.hero.equipment.accessory && gameState.hero.equipment.accessory.atkBonus) atk += gameState.hero
+                .equipment.accessory.atkBonus;
+            return atk;
+        }
+
+        function getHeroDef() {
+            let def = gameState.hero.baseDef + gameState.hero.level;
+            if (gameState.hero.equipment.armor) def += gameState.hero.equipment.armor.def;
+            return def;
+        }
+
+        function getHeroCrit() {
+            let crit = gameState.hero.critChance;
+            if (gameState.hero.equipment.accessory && gameState.hero.equipment.accessory.critBonus) crit += gameState.hero
+                .equipment.accessory.critBonus;
+            return Math.min(crit, 50);
+        }
+
+        function attackEnemy(enemy) {
+            const now = Date.now();
+            if (now - gameState.lastAttackTime < gameState.attackCooldown) return;
+            gameState.lastAttackTime = now;
+
+            let damage = getHeroAtk() - enemy.def;
+            if (damage < 1) damage = 1;
+            const isCrit = Math.random() * 100 < getHeroCrit();
+            if (isCrit) damage = Math.floor(damage * 2);
+            enemy.hp -= damage;
+
+            addLog(`⚔️ Вы атакуете ${enemy.name} на ${damage} урона${isCrit ? ' 💥КРИТ!' : ''}!`, 'damage');
+            if (enemy.hp <= 0) {
+                enemy.alive = false;
+                gameState.hero.kills++;
+                gameState.hero.gold += enemy.goldReward;
+                gainXP(enemy.xpReward);
+                addLog(`💀 ${enemy.name} повержен! +${enemy.xpReward} XP, +${enemy.goldReward} золота.`, 'loot');
+                maybeDropLoot(enemy);
+            } else {
+                // Ответный удар
+                const enemyDmg = Math.max(1, enemy.atk - getHeroDef());
+                gameState.hero.hp -= enemyDmg;
+                addLog(`😠 ${enemy.name} бьёт в ответ на ${enemyDmg} урона!`, 'damage');
+                checkDeath();
+            }
+            updateAllUI();
+        }
+
+        function maybeDropLoot(enemy) {
+            if (Math.random() < 0.25) {
+                const loot = [
+                    { name: 'Зелье здоровья', type: 'potion', heal: 35, rarity: 'common', qty: 1 },
+                    { name: 'Кольцо вампира', type: 'accessory', atkBonus: 4, rarity: 'rare', qty: 1 },
+                    { name: 'Усиленный щит', type: 'armor', def: 10 + gameState.floor * 2, rarity: 'rare', qty: 1 },
+                ][Math.floor(Math.random() * 3)];
+                gameState.items.push({ ...loot, x: enemy.x, y: enemy.y });
+                addLog(`🎁 ${enemy.name} выронил ${loot.name}!`, 'loot');
+            }
+        }
+
+        function gainXP(amount) {
+            gameState.hero.xp += amount;
+            gameState.hero.totalXP += amount;
+            const needed = gameState.hero.level * 100;
+            if (gameState.hero.xp >= needed) {
+                gameState.hero.xp -= needed;
+                gameState.hero.level++;
+                gameState.hero.maxHp += 20;
+                gameState.hero.hp = gameState.hero.maxHp;
+                gameState.hero.maxMp += 10;
+                gameState.hero.mp = gameState.hero.maxMp;
+                gameState.hero.baseAtk += 3;
+                gameState.hero.baseDef += 2;
+                addLog(`🎉 УРОВЕНЬ ${gameState.hero.level}! Характеристики повышены! HP/MP восстановлены.`, 'level');
+            }
+        }
+
+        function usePotion(index) {
+            const item = gameState.hero.inventory[index];
+            if (!item || item.type !== 'potion') return;
+            if (item.heal) {
+                const healed = Math.min(item.heal, gameState.hero.maxHp - gameState.hero.hp);
+                gameState.hero.hp += healed;
+                addLog(`🧪 Выпито ${item.name}. +${healed} HP.`, 'heal');
+            }
+            if (item.mana) {
+                const restored = Math.min(item.mana, gameState.hero.maxMp - gameState.hero.mp);
+                gameState.hero.mp += restored;
+                addLog(`💎 Выпито ${item.name}. +${restored} MP.`, 'heal');
+            }
+            item.qty--;
+            if (item.qty <= 0) gameState.hero.inventory.splice(index, 1);
+            updateAllUI();
+        }
+
+        function checkDeath() {
+            if (gameState.hero.hp <= 0) {
+                gameState.hero.hp = 0;
+                gameState.gameOver = true;
+                addLog('💀 ВЫ ПОГИБЛИ... Игра окончена. Нажмите "Начать заново".', 'damage');
+                updateAllUI();
+            }
+        }
+
+        function restartGame() {
+            gameState = {
+                hero: {
+                    name: 'Артур',
+                    x: 5,
+                    y: 5,
+                    hp: 100,
+                    maxHp: 100,
+                    mp: 50,
+                    maxMp: 50,
+                    xp: 0,
+                    level: 1,
+                    baseAtk: 15,
+                    baseDef: 5,
+                    speed: 3,
+                    critChance: 5,
+                    gold: 0,
+                    kills: 0,
+                    totalXP: 0,
+                    equipment: {
+                        weapon: { name: 'Ржавый меч', atk: 8, rarity: 'common' },
+                        armor: { name: 'Кожаный доспех', def: 4, rarity: 'common' },
+                        accessory: null
+                    },
+                    inventory: [
+                        { name: 'Зелье здоровья', type: 'potion', heal: 40, qty: 3, rarity: 'common' },
+                        { name: 'Зелье маны', type: 'potion', mana: 30, qty: 2, rarity: 'common' }
+                    ]
+                },
+                map: [],
+                enemies: [],
+                items: [],
+                floor: 1,
+                dungeonName: 'Подземелье Теней',
+                log: [],
+                gameOver: false,
+                lastAttackTime: 0,
+                attackCooldown: 400
+            };
+            initFloor();
+            addLog('🔄 Новая игра началась. Удачи, герой!', 'info');
+        }
+
+        // ==================== ИНВЕНТАРЬ ====================
+        function pickupItem() {
+            const hx = gameState.hero.x;
+            const hy = gameState.hero.y;
+            const itemIndex = gameState.items.findIndex(i => i.x === hx && i.y === hy);
+            if (itemIndex >= 0) {
+                const item = gameState.items[itemIndex];
+                if (item.type === 'potion') {
+                    // Стакаем с существующими
+                    const existing = gameState.hero.inventory.find(i => i.name === item.name && i.type === 'potion');
+                    if (existing) {
+                        existing.qty += item.qty;
+                    } else {
+                        gameState.hero.inventory.push({ ...item });
+                    }
+                } else {
+                    gameState.hero.inventory.push({ ...item });
+                }
+                gameState.items.splice(itemIndex, 1);
+                addLog(`📦 Подобран предмет: ${item.name}`, 'loot');
+                updateAllUI();
+            }
+            // Проверка сундуков
+            if (gameState.map[hy][hx] === TILE.CHEST) {
+                gameState.map[hy][hx] = TILE.FLOOR;
+                const goldFound = 20 + gameState.floor * 10 + Math.floor(Math.random() * 50);
+                gameState.hero.gold += goldFound;
+                addLog(`📦 Сундук открыт! Найдено ${goldFound} золота!`, 'loot');
+                updateAllUI();
+            }
+        }
+
+        function equipItem(index) {
+            const item = gameState.hero.inventory[index];
+            if (!item || item.type === 'potion') return;
+            const type = item.type;
+            const slotMap = { weapon: 'weapon', armor: 'armor', accessory: 'accessory' };
+            const slot = slotMap[type];
+            if (!slot) return;
+            // Возвращаем старый предмет в инвентарь
+            const oldItem = gameState.hero.equipment[slot];
+            if (oldItem) {
+                gameState.hero.inventory.push({ ...oldItem, type: slot });
+            }
+            // Экипируем новый
+            gameState.hero.equipment[slot] = { ...item };
+            gameState.hero.inventory.splice(index, 1);
+            addLog(`⚡ Экипирован предмет: ${item.name}`, 'info');
+            updateAllUI();
+        }
+
+        function dropItem(index) {
+            const item = gameState.hero.inventory[index];
+            if (!item) return;
+            gameState.items.push({ ...item, x: gameState.hero.x, y: gameState.hero.y, qty: item.qty || 1 });
+            gameState.hero.inventory.splice(index, 1);
+            addLog(`🗑️ Выброшен предмет: ${item.name}`, 'info');
+            updateAllUI();
+        }
+
+        // ==================== ОТРИСОВКА ====================
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // Отрисовка карты
+            for (let y = 0; y < MAP_ROWS; y++) {
+                for (let x = 0; x < MAP_COLS; x++) {
+                    const tile = gameState.map[y][x];
+                    const px = x * TILE_SIZE;
+                    const py = y * TILE_SIZE;
+                    switch (tile) {
+                        case TILE.WALL:
+                            ctx.fillStyle = '#333';
+                            ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+                            ctx.fillStyle = '#444';
+                            ctx.fillRect(px + 2, py + 2, TILE_SIZE - 4, TILE_SIZE - 4);
+                            break;
+                        case TILE.FLOOR:
+                            ctx.fillStyle = '#1a1a1a';
+                            ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+                            ctx.fillStyle = '#222';
+                            ctx.fillRect(px + 1, py + 1, TILE_SIZE - 2, TILE_SIZE - 2);
+                            break;
+                        case TILE.STAIRS_DOWN:
+                            ctx.fillStyle = '#1a1a00';
+                            ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+                            ctx.fillStyle = '#ff8800';
+                            ctx.font = '20px Arial';
+                            ctx.fillText('⬇️', px + 6, py + 24);
+                            break;
+                        case TILE.CHEST:
+                            ctx.fillStyle = '#1a1a1a';
+                            ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+                            ctx.fillStyle = '#ffd700';
+                            ctx.font = '20px Arial';
+                            ctx.fillText('📦', px + 4, py + 24);
+                            break;
+                        case TILE.TRAP:
+                            ctx.fillStyle = '#1a0000';
+                            ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+                            ctx.fillStyle = '#ff0000';
+                            ctx.font = '14px Arial';
+                            ctx.fillText('⚠️', px + 8, py + 22);
+                            break;
+                    }
+                }
+            }
+            // Предметы на полу
+            gameState.items.forEach(item => {
+                const px = item.x * TILE_SIZE;
+                const py = item.y * TILE_SIZE;
+                ctx.fillStyle = item.rarity === 'epic' ? '#aa44ff' : item.rarity === 'rare' ? '#4488ff' : '#aaa';
+                ctx.font = '16px Arial';
+                ctx.fillText('💠', px + 6, py + 24);
+                ctx.fillStyle = '#fff';
+                ctx.font = '8px Arial';
+                ctx.fillText(item.name.substring(0, 6), px, py + 10);
+            });
+            // Враги
+            gameState.enemies.forEach(enemy => {
+                if (!enemy.alive) return;
+                const px = enemy.x * TILE_SIZE;
+                const py = enemy.y * TILE_SIZE;
+                ctx.fillStyle = '#ff4444';
+                ctx.beginPath();
+                ctx.arc(px + TILE_SIZE / 2, py + TILE_SIZE / 2, TILE_SIZE / 2 - 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#000';
+                ctx.font = 'bold 10px monospace';
+                ctx.fillText(enemy.name.substring(0, 4), px + 2, py + 10);
+                // HP бар врага
+                const hpPct = enemy.hp / enemy.maxHp;
+                ctx.fillStyle = '#300';
+                ctx.fillRect(px + 2, py + TILE_SIZE - 6, TILE_SIZE - 4, 4);
+                ctx.fillStyle = '#f00';
+                ctx.fillRect(px + 2, py + TILE_SIZE - 6, (TILE_SIZE - 4) * hpPct, 4);
+            });
+            // Герой
+            const hpx = gameState.hero.x * TILE_SIZE;
+            const hpy = gameState.hero.y * TILE_SIZE;
+            ctx.fillStyle = '#00ff88';
+            ctx.beginPath();
+            ctx.arc(hpx + TILE_SIZE / 2, hpy + TILE_SIZE / 2, TILE_SIZE / 2 - 1, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 16px Arial';
+            ctx.fillText('⚔️', hpx + 4, hpy + 24);
+            // Подсветка цели
+            const target = getTargetEnemy();
+            if (target) {
+                const tx = target.x * TILE_SIZE;
+                const ty = target.y * TILE_SIZE;
+                ctx.strokeStyle = '#ffd700';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(tx + 1, ty + 1, TILE_SIZE - 2, TILE_SIZE - 2);
+            }
+        }
+
+        function getTargetEnemy() {
+            const hx = gameState.hero.x;
+            const hy = gameState.hero.y;
+            // Ищем врага на соседних клетках
+            for (let dy = -1; dy <= 1; dy++) {
+                for (let dx = -1; dx <= 1; dx++) {
+                    if (dx === 0 && dy === 0) continue;
+                    const enemy = gameState.enemies.find(e => e.alive && e.x === hx + dx && e.y === hy + dy);
+                    if (enemy) return enemy;
+                }
+            }
+            return null;
+        }
+
+        // ==================== УПРАВЛЕНИЕ ====================
+        document.addEventListener('keydown', (e) => {
+            if (gameState.gameOver) return;
+            const key = e.key.toLowerCase();
+            let moved = false;
+            const h = gameState.hero;
+            let nx = h.x,
+                ny = h.y;
+            switch (key) {
+                case 'w':
+                case 'arrowup':
+                    ny--;
+                    moved = true;
+                    break;
+                case 's':
+                case 'arrowdown':
+                    ny++;
+                    moved = true;
+                    break;
+                case 'a':
+                case 'arrowleft':
+                    nx--;
+                    moved = true;
+                    break;
+                case 'd':
+                case 'arrowright':
+                    nx++;
+                    moved = true;
+                    break;
+                case ' ':
+                    e.preventDefault();
+                    const target = getTargetEnemy();
+                    if (target) attackEnemy(target);
+                    break;
+                case 'e':
+                    pickupItem();
+                    // Проверка лестницы
+                    if (gameState.map[h.y][h.x] === TILE.STAIRS_DOWN) descendFloor();
+                    break;
+                case 'q':
+                    const potionIdx = gameState.hero.inventory.findIndex(i => i.type === 'potion' && i.heal);
+                    if (potionIdx >= 0) usePotion(potionIdx);
+                    else addLog('❌ Нет зелий здоровья!', 'info');
+                    break;
+                case '1':
+                    if (gameState.hero.inventory.length >= 1) {
+                        const item = gameState.hero.inventory[0];
+                        if (item.type === 'potion') usePotion(0);
+                        else equipItem(0);
+                    }
+                    break;
+                case '2':
+                    if (gameState.hero.inventory.length >= 2) {
+                        const item = gameState.hero.inventory[1];
+                        if (item.type === 'potion') usePotion(1);
+                        else equipItem(1);
+                    }
+                    break;
+                case '3':
+                    if (gameState.hero.inventory.length >= 3) {
+                        const item = gameState.hero.inventory[2];
+                        if (item.type === 'potion') usePotion(2);
+                        else equipItem(2);
+                    }
+                    break;
+            }
+            if (moved && nx >= 0 && nx < MAP_COLS && ny >= 0 && ny < MAP_ROWS && gameState.map[ny][nx] !== TILE.WALL) {
+                // Проверка на врага — нельзя ходить сквозь живых врагов
+                const blockingEnemy = gameState.enemies.find(e => e.alive && e.x === nx && e.y === ny);
+                if (!blockingEnemy) {
+                    h.x = nx;
+                    h.y = ny;
+                    // Проверка ловушки
+                    if (gameState.map[ny][nx] === TILE.TRAP) {
+                        const trapDmg = 10 + gameState.floor * 5;
+                        h.hp -= trapDmg;
+                        gameState.map[ny][nx] = TILE.FLOOR;
+                        addLog(`⚠️ Вы наступили на ловушку! -${trapDmg} HP.`, 'damage');
+                        checkDeath();
+                    }
+                }
+            }
+            updateAllUI();
+            draw();
+        });
+
+        // Клик по врагу для атаки
+        canvas.addEventListener('click', (e) => {
+            if (gameState.gameOver) return;
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const mx = Math.floor((e.clientX - rect.left) * scaleX / TILE_SIZE);
+            const my = Math.floor((e.clientY - rect.top) * scaleY / TILE_SIZE);
+            const enemy = gameState.enemies.find(en => en.alive && en.x === mx && en.y === my);
+            if (enemy && Math.abs(enemy.x - gameState.hero.x) <= 1 && Math.abs(enemy.y - gameState.hero.y) <= 1) {
+                attackEnemy(enemy);
+            }
+        });
+
+        // ==================== ИИ ВРАГОВ ====================
+        function enemyAI() {
+            if (gameState.gameOver) return;
+            gameState.enemies.forEach(enemy => {
+                if (!enemy.alive) return;
+                enemy.aiTimer--;
+                if (enemy.aiTimer > 0) return;
+                enemy.aiTimer = 2 + Math.floor(Math.random() * 3);
+                const hx = gameState.hero.x;
+                const hy = gameState.hero.y;
+                const dist = Math.abs(enemy.x - hx) + Math.abs(enemy.y - hy);
+                // Преследование, если герой в радиусе 6 клеток
+                if (dist <= 6) {
+                    let dx = 0,
+                        dy = 0;
+                    if (enemy.x < hx) dx = 1;
+                    else if (enemy.x > hx) dx = -1;
+                    if (enemy.y < hy) dy = 1;
+                    else if (enemy.y > hy) dy = -1;
+                    const nx = enemy.x + dx;
+                    const ny = enemy.y + dy;
+                    const blocked = gameState.map[ny] && gameState.map[ny][nx] === TILE.WALL ||
+                        gameState.enemies.some(e => e.alive && e !== enemy && e.x === nx && e.y === ny);
+                    if (!blocked && nx >= 0 && nx < MAP_COLS && ny >= 0 && ny < MAP_ROWS) {
+                        // Если дошли до героя — атакуют
+                        if (nx === hx && ny === hy) {
+                            const dmg = Math.max(1, enemy.atk - getHeroDef());
+                            gameState.hero.hp -= dmg;
+                            addLog(`👊 ${enemy.name} атакует вас! -${dmg} HP.`, 'damage');
+                            checkDeath();
+                        } else {
+                            enemy.x = nx;
+                            enemy.y = ny;
+                        }
+                    }
+                }
+            });
+        }
+
+        // ==================== UI ОБНОВЛЕНИЕ ====================
+        function updateAllUI() {
+            const h = gameState.hero;
+            // HP/MP/XP бары
+            const hpPct = (h.hp / h.maxHp) * 100;
+            const mpPct = (h.mp / h.maxMp) * 100;
+            const xpPct = (h.xp / (h.level * 100)) * 100;
+            document.getElementById('hpBar').style.width = hpPct + '%';
+            document.getElementById('mpBar').style.width = mpPct + '%';
+            document.getElementById('xpBar2').style.width = xpPct + '%';
+            document.getElementById('hpText').textContent = `${h.hp}/${h.maxHp}`;
+            document.getElementById('mpText').textContent = `${h.mp}/${h.maxMp}`;
+            document.getElementById('xpText').textContent = `${h.xp}/${h.level * 100}`;
+            document.getElementById('goldDisplay').textContent = h.gold;
+            document.getElementById('heroLevel').textContent = `Ур. ${h.level}`;
+            document.getElementById('floorDisplay').textContent = `🏔️ Этаж ${gameState.floor} — ${gameState.dungeonName}`;
+            // Статистика
+            document.getElementById('statAtk').textContent = getHeroAtk();
+            document.getElementById('statDef').textContent = getHeroDef();
+            document.getElementById('statCrit').textContent = getHeroCrit() + '%';
+            document.getElementById('statKills').textContent = h.kills;
+            document.getElementById('statTotalXP').textContent = h.totalXP;
+            // Инвентарь
+            const invList = document.getElementById('inventoryList');
+            if (h.inventory.length === 0) {
+                invList.innerHTML = '<div class="item-slot" style="color:#555;">Пусто</div>';
+            } else {
+                invList.innerHTML = h.inventory.map((item, i) => {
+                    const rarityClass = 'item-rarity-' + (item.rarity || 'common');
+                    return `<div class="item-slot ${rarityClass}" onclick="equipItem(${i})" title="Клик — экипировать (${i+1})">
+                <span>${item.name}${item.qty > 1 ? ' x' + item.qty : ''}</span>
+                <span style="font-size:0.7em;color:#666;">[${i+1}]</span>
+              </div>`;
+                }).join('');
+            }
+            // Экипировка
+            const eqList = document.getElementById('equipmentList');
+            eqList.innerHTML = `
+            <div class="item-slot equipped item-rarity-${h.equipment.weapon?.rarity || 'common'}"><span>🗡️ Оружие</span><span>${h.equipment.weapon?.name || 'Нет'}</span></div>
+            <div class="item-slot equipped item-rarity-${h.equipment.armor?.rarity || 'common'}"><span>🛡️ Броня</span><span>${h.equipment.armor?.name || 'Нет'}</span></div>
+            <div class="item-slot equipped item-rarity-${h.equipment.accessory?.rarity || 'common'}"><span>💍 Аксессуар</span><span>${h.equipment.accessory?.name || 'Нет'}</span></div>
+          `;
+            // Инфо о цели
+            const target = getTargetEnemy();
+            if (target) {
+                document.getElementById('targetName').textContent = target.name;
+                document.getElementById('targetHP').textContent = `❤️ ${target.hp}/${target.maxHp} | ⚔️ ${target.atk} | 🛡️ ${target.def}`;
+            } else {
+                document.getElementById('targetName').textContent = 'Нет';
+                document.getElementById('targetHP').textContent = '';
+            }
+        }
+
+        function addLog(message, type = '') {
+            gameState.log.push({ message, type, time: Date.now() });
+            if (gameState.log.length > 50) gameState.log.shift();
+            const logEl = document.getElementById('gameLog');
+            logEl.innerHTML = gameState.log.slice(-15).map(l =>
+                `<div class="log-entry log-${l.type}">${l.message}</div>`
+            ).join('');
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        // ==================== СОХРАНЕНИЕ ====================
+        function saveGame() {
+            const saveData = {
+                hero: gameState.hero,
+                floor: gameState.floor,
+                dungeonName: gameState.dungeonName,
+                map: gameState.map,
+                enemies: gameState.enemies,
+                items: gameState.items,
+            };
+            localStorage.setItem('dungeonRPG_save', JSON.stringify(saveData));
+        }
+
+        function loadGame() {
+            const raw = localStorage.getItem('dungeonRPG_save');
+            if (raw) {
+                try {
+                    const data = JSON.parse(raw);
+                    gameState.hero = data.hero;
+                    gameState.floor = data.floor;
+                    gameState.dungeonName = data.dungeonName;
+                    gameState.map = data.map;
+                    gameState.enemies = data.enemies;
+                    gameState.items = data.items;
+                    gameState.log = [];
+                    gameState.gameOver = false;
+                    gameState.lastAttackTime = 0;
+                    updateAllUI();
+                    addLog('💾 Игра загружена. Продолжайте приключение!', 'info');
+                    return true;
+                } catch (e) {
+                    console.error('Ошибка загрузки:', e);
+                }
+            }
+            return false;
+        }
+
+        function saveGameManual() {
+            saveGame();
+            addLog('💾 Игра сохранена вручную.', 'info');
+        }
+
+        // Автосохранение
+        setInterval(() => {
+            if (!gameState.gameOver) {
+                saveGame();
+                addLog('💾 Автосохранение...', 'info');
+            }
+        }, 60000);
+
+        // ==================== ИГРОВОЙ ЦИКЛ ====================
+        function gameLoop() {
+            enemyAI();
+            draw();
+            updateAllUI();
+        }
+
+        // Запуск
+        function startGame() {
+            if (!loadGame()) {
+                initFloor();
+            }
+            setInterval(gameLoop, 200);
+            draw();
+        }
+
+        startGame();
+        console.log('🐉 Подземелье Дракона: Хроники Героя — готово к игре!');
+        console.log('🎮 Управление: WASD/Стрелки — движение, Пробел — атака, E — подобрать/лестница, Q — зелье, 1/2/3 — инвентарь');
+        console.log('💾 Автосохранение каждые 60 секунд. Прогресс сохраняется в браузере.');
+    </script>
+</body>
+</html>
